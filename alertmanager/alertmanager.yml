@@ -1,0 +1,48 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "slack-notifications"
+  group_by: ["alertname", "severity"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 30m
+
+  routes:
+    - matchers:
+        - severity="warning"
+      receiver: "slack-dev"
+      continue: false
+
+    - matchers:
+        - severity="critical"
+      receiver: "slack-oncall"
+      continue: false
+
+receivers:
+  # Add this default one
+  - name: "slack-notifications"
+    slack_configs:
+      - channel: "#devops-alerts-monitoring"
+        send_resolved: true
+        username: "PrometheusBot"
+        icon_emoji: ":rotating_light:"
+        api_url: "https://hooks.slack.com/services/T08SK7PJXJT/B09KSAUEH71/your-webhook-token"
+
+  - name: "slack-dev"
+    slack_configs:
+      - channel: "#slack-dev-warnings"
+        send_resolved: true
+        username: "PrometheusBot"
+        title: "{{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})"
+        text: "{{ .CommonAnnotations.description }}"
+        api_url: "https://hooks.slack.com/services/T08SK7PJXJT/B09LXE3B3KQ/your-webhook-token"
+
+  - name: "slack-oncall"
+    slack_configs:
+      - channel: "#devops-alerts-monitoring"
+        send_resolved: true
+        username: "PrometheusBot"
+        title: "{{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})"
+        text: "{{ .CommonAnnotations.description }}"
+        api_url: "https://hooks.slack.com/services/T08SK7PJXJT/B09KSAUEH71/your-webhook-token"
